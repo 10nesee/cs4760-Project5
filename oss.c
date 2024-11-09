@@ -6,13 +6,41 @@
 #include <unistd.h>
 #include <signal.h>
 
-#define SHM_KEY 1234  // Shared memory key
+#define SHM_KEY 1234            // Shared memory key for clock
+#define MAX_RESOURCES 10        // Total number of resources
+#define INSTANCES_PER_RESOURCE 20 // Instances per resource
 
+// Clock structure
 struct Clock {
     int seconds;
     int nanoseconds;
 };
 
+// Resource Descriptor structure
+struct ResourceDescriptor {
+    int total;                    // Total instances of the resource
+    int available;                // Available instances
+    int allocated[MAX_RESOURCES]; // Track allocated instances for each process
+};
+
+// Array to store all resource descriptors
+struct ResourceDescriptor resources[MAX_RESOURCES];
+
+// Function to initialize resources
+void initializeResources() {
+    for (int i = 0; i < MAX_RESOURCES; i++) {
+        resources[i].total = INSTANCES_PER_RESOURCE;
+        resources[i].available = INSTANCES_PER_RESOURCE;
+
+        // Initialize allocated instances for each process to zero
+        for (int j = 0; j < MAX_RESOURCES; j++) {
+            resources[i].allocated[j] = 0;
+        }
+    }
+    printf("Resources initialized: Each resource has %d instances.\n", INSTANCES_PER_RESOURCE);
+}
+
+// Function to increment the clock
 void incrementClock(struct Clock *clock, int nano_increment) {
     clock->nanoseconds += nano_increment;
     if (clock->nanoseconds >= 1000000000) {
@@ -43,7 +71,10 @@ int main() {
     clock->seconds = 0;
     clock->nanoseconds = 0;
 
-    // Increment clock in a loop for demonstration
+    // Initialize resources
+    initializeResources();
+
+    // Increment clock and display resource 
     for (int i = 0; i < 10; i++) {
         incrementClock(clock, 100000000);
         printf("Clock: %d seconds, %d nanoseconds\n", clock->seconds, clock->nanoseconds);
