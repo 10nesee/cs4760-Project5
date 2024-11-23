@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g0
 
 # Targets
 TARGETS = oss user_proc
@@ -20,5 +20,5 @@ user_proc: $(USER_PROC_SRC)
 
 # Clean rule
 clean:
-	rm -f $(TARGETS) *.o
+	rm -f $(TARGETS)
 

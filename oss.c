@@ -238,14 +238,48 @@ int main(int argc, char *argv[]) {
     // Initialize resources
     initializeResources();
 
+    int totalGenerated = 0;  // Track total generated processes
+    int activeChildren = 0;  // Track active processes
+
     // Main simulation loop
-    while (1) {
+    while (totalGenerated < maxProcesses || activeChildren > 0) {
         incrementClock(500000000);  // Increment clock by 0.5 seconds
-        logResourceTable();
+
+        // Launch a new child process if conditions allow
+        if (totalGenerated < maxProcesses && activeChildren < MAX_CHILDREN) {
+            pid_t pid = fork();
+            if (pid == -1) {
+                perror("Failed to fork process");
+            } else if (pid == 0) {
+                execl("./user_proc", "user_proc", NULL);
+                perror("Failed to exec user_proc");
+                exit(1);
+            } else {
+                totalGenerated++;
+                activeChildren++;
+                logEvent("OSS: Launched process %d (total: %d)\n", pid, totalGenerated);
+            }
+        }
+
+        // Check for deadlock
         detectAndResolveDeadlock();
-        usleep(intervalMs * 1000);  // Sleep for interval in milliseconds
+
+        // Wait for child termination
+        int status;
+        pid_t childPid = waitpid(-1, &status, WNOHANG);
+        if (childPid > 0) {
+            activeChildren--;
+            logEvent("OSS: Process %d terminated. Active children: %d\n", childPid, activeChildren);
+        }
+
+        // Log resource table every second
+        logResourceTable();
+
+        // Sleep for the specified interval
+        usleep(intervalMs * 1000);  // Convert ms to microseconds
     }
 
+    logEvent("OSS: All processes have terminated. Exiting...\n");
     cleanupResources();
     return 0;
 }
